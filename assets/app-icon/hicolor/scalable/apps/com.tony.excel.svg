@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- TS Excel app icon: two-tone Excel-green panels with a bold X, in the same
+       design language as Tony's app suite. Full-bleed 512 tile (rx=112);
+       packaging/icons.sh derives every other format from this file. -->
+  <rect x="0" y="0" width="512" height="512" rx="112" fill="#052E1B"/>
+  <rect x="37" y="37" width="438" height="438" rx="93" fill="#0B4D27"/>
+  <text x="256" y="342" text-anchor="middle" font-family="Arial, Helvetica, sans-serif"
+        font-size="235" font-weight="700" fill="#33C481">X</text>
+</svg>
