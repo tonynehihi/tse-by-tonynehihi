@@ -41,8 +41,17 @@ impl eframe::App for App {
         }
         self.0.logic(ctx);
         self.0.poll_printing(ctx);
-        if ctx.input(|input| input.viewport().close_requested()) && self.0.printing.busy() {
+        // Every quit path funnels into this close request (the close button, ⌘Q/Quit,
+        // the Dock, Apple Events and the control channel's `app.quit` all send
+        // `ViewportCommand::Close`). While printing, veto outright; otherwise the
+        // app first asks about every unsaved workbook (`SheetApp::begin_quit`) and
+        // the close waits until the prompts are answered.
+        if ctx.input(|input| input.viewport().close_requested()) && (self.0.printing.busy() || !self.0.begin_quit()) {
             ctx.send_viewport_cmd(egui::ViewportCommand::CancelClose);
+        }
+        // The save prompts are all answered: finish the close vetoed above.
+        if self.0.quit_ready() {
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         }
     }
     fn raw_input_hook(&mut self, _ctx: &egui::Context, raw: &mut egui::RawInput) {

@@ -19,7 +19,7 @@ This repository is **not** the official GridCraft and is not a public product re
 
 ## What Tony changed
 
-- **Name & identity**: the app is called **TS Excel**, with its own Excel-green "X" icon, About screen and macOS bundle (**TsE.app**, bundle id `com.tony.excel`).
+- **Name & identity**: the app is called **TS Excel**, with its own Excel-green "X" icon, About screen and macOS bundle (**TS Excel.app**, bundle id `com.tony.excel`).
 - **Built-in self-update**: *Help → Check for Updates* — the app checks the Releases of this repo for the newest version, shows the changelog in a launch prompt, then downloads, builds and installs the update on macOS by itself.
 - **No upstream links in the app**: the Discord / website / GitHub links to the original project were removed from the Help menu, the About screen and the menus; the app's Help menu is just About / Check for Updates / System Info / Keyboard Shortcuts.
 - **Your data stays put**: settings and data folders keep their original GridCraft names, so existing settings and recent-file lists carry over untouched.

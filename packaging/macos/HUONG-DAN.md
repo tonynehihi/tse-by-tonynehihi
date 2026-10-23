@@ -2,10 +2,16 @@
 
 Bản build cá nhân của Tony, dựa trên GridCraft của storytold (MIT/Apache-2.0), đã đổi:
 
-- Tên app là **TS Excel** (TS = Tony Suite), tên ngoài Spotlight/Finder là **TsE**, icon **X xanh lá** kiểu Excel cùng ngôn ngữ thiết kế với cả bộ app của Tony
+- Tên app là **TS Excel** (TS = Tony Suite), tên ngoài Spotlight/Finder là **TS Excel** (trước bản 1.1.1 là TsE), icon **X xanh lá** kiểu Excel cùng ngôn ngữ thiết kế với cả bộ app của Tony
 - **Tự update trong app**: Help → Check for Updates (xem thêm mục dưới)
 - **Xóa sạch link về bản gốc** trong app: không còn Discord / website / GitHub của ArtCraft ở Help, About hay menu nào nữa; menu Help chỉ còn 4 mục: About / Check for Updates / System Info / Keyboard Shortcuts
 - Thư mục settings/dữ liệu **giữ nguyên tên GridCraft như bản gốc** — cài bản này không mất settings hay danh sách file gần đây
+
+## Mới ở bản 1.1.1 — hỏi lưu trước khi thoát + tên app TS Excel
+
+- **Đóng app giờ hỏi lưu**: bấm nút đóng cửa sổ hay thoát app (⌘Q, Quit) khi còn bảng tính chưa lưu thì app hỏi Save / Don't Save / Cancel cho từng bảng tính một — không còn mất dữ liệu thầm lặng như trước. (Bản gốc GridCraft chỉ hỏi khi đóng tài liệu bằng File → Close.)
+- **Tên app ngoài Finder/Spotlight đổi thành TS Excel.app** (trước là TsE.app) để gõ "Excel" trong Spotlight là tìm thấy app. Settings và dữ liệu giữ nguyên, không mất gì.
+- Lưu ý khi **tự update trong app từ bản 1.1.0**: thư mục app trong /Applications vẫn giữ tên cũ TsE.app nhưng ruột đã là bản 1.1.1 — Spotlight/Finder vẫn hiện tên **TS Excel** đúng như thường. Muốn thư mục cũng mang tên mới thì gỡ app cũ rồi cài lại từ file `.dmg` của bản 1.1.1.
 
 ## Mới ở bản 1.1.0 — TS Excel + tự update trong app
 
@@ -23,6 +29,7 @@ Bản build cá nhân của Tony, dựa trên GridCraft của storytold (MIT/Apa
 # Xóa bản build cũ
 rm -rf target/
 # Xóa app đã cài (nếu đã kéo vào Applications)
+rm -rf "/Applications/TS Excel.app"
 rm -rf "/Applications/TsE.app"
 rm -rf "/Applications/GridCraft.app"
 ```
@@ -44,11 +51,11 @@ Xong thì **đóng Terminal, mở lại**.
 
 ## Build & chạy
 
-**Bước 3** — Giải nén `tse-by-tonynehihi-1.1.0.zip`.
+**Bước 3** — Giải nén `tse-by-tonynehihi-1.1.1.zip`.
 
 **Bước 4** — Trong Terminal:
 ```bash
-cd <kéo folder tse-by-tonynehihi-1.1.0 vào Terminal rồi thả>
+cd <kéo folder tse-by-tonynehihi-1.1.1 vào Terminal rồi thả>
 cargo build --release -p gridcraft
 ```
 (Lần đầu 10–20 phút.)
@@ -63,7 +70,7 @@ cargo build --release -p gridcraft
 packaging/macos/package.sh --arch aarch64
 ```
 (Máy Intel cũ: `--arch x86_64`.)
-Xong mở file `.dmg` trong `dist/release/`, kéo **TsE.app** vào Applications.
+Xong mở file `.dmg` trong `dist/release/`, kéo **TS Excel.app** vào Applications.
 
 ## App không mở được (macOS chặn app tự đóng gói)
 
@@ -76,7 +83,7 @@ Chuột phải vào app → chọn **Open** → bấm **Open** trong hộp tho�
 1. Mở Terminal.
 2. Gõ đúng dòng này rồi Enter:
 ```bash
-xattr -cr "/Applications/TsE.app"
+xattr -cr "/Applications/TS Excel.app"
 ```
 3. Mở app lại bình thường.
 

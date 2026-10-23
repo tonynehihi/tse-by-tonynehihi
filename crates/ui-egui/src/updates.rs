@@ -789,13 +789,21 @@ fn run_build(_zip: &std::path::Path, _work: &std::path::Path, _cancel: &AtomicBo
 /// launched mid-swap), installs the built app and relaunches. Every step logs to
 /// ~/Library/Logs/TSExcel-update.log; a failed install restores the
 /// old app from the backup and reopens it.
+///
+/// The installed bundle is `TS Excel.app` since 1.1.1; before that it was
+/// `TsE.app`. The swapper knows both names: it waits for either one to exit,
+/// moves whichever is installed into the backup, and always installs to
+/// `TS Excel.app`, so after any update exactly one copy remains, under the
+/// current name.
 const SWAP_SCRIPT: &str = r#"#!/bin/sh
 BUILT="$1"
 VER="${2:-unknown}"
 WORK="${3:-}"
-DEST="/Applications/TsE.app"
+DEST="/Applications/TS Excel.app"
+LEGACY="/Applications/TsE.app"
 CACHE_DIR="$HOME/Library/Caches/TS Excel/updates"
-BACKUP="$CACHE_DIR/backup/TsE.app"
+BACKUP="$CACHE_DIR/backup/TS Excel.app"
+LEGACY_BACKUP="$CACHE_DIR/backup/TsE.app"
 LOG_DIR="$HOME/Library/Logs"
 LOG="$LOG_DIR/TSExcel-update.log"
 mkdir -p "$LOG_DIR" "$CACHE_DIR/backup"
@@ -805,15 +813,21 @@ echo "=== Installing TS Excel $VER - $(date) ==="
 INSTALLED=0
 fail() {
   echo "FAILED: $1"
-  if [ "$INSTALLED" != 1 ] && [ -d "$BACKUP" ]; then
-    rm -rf "$DEST"
-    mv "$BACKUP" "$DEST" || true
+  if [ "$INSTALLED" != 1 ]; then
+    if [ -d "$BACKUP" ]; then
+      rm -rf "$DEST"
+      mv "$BACKUP" "$DEST" || true
+      open "$DEST" >/dev/null 2>&1 || true
+    elif [ -d "$LEGACY_BACKUP" ]; then
+      rm -rf "$LEGACY"
+      mv "$LEGACY_BACKUP" "$LEGACY" || true
+      open "$LEGACY" >/dev/null 2>&1 || true
+    fi
   fi
-  open "$DEST" >/dev/null 2>&1 || true
   exit 1
 }
 i=0
-while pgrep -f "/TsE.app/Contents/MacOS/TsE" >/dev/null 2>&1; do
+while pgrep -f "TS Excel.app/Contents/MacOS/TsE" >/dev/null 2>&1 || pgrep -f "/TsE.app/Contents/MacOS/TsE" >/dev/null 2>&1; do
   i=$((i+1))
   if [ "$i" -gt 120 ]; then
     echo "The app was still running after 120s - install postponed, nothing changed."
@@ -822,11 +836,17 @@ while pgrep -f "/TsE.app/Contents/MacOS/TsE" >/dev/null 2>&1; do
   sleep 1
 done
 [ -d "$BUILT" ] || fail "the built app is missing"
-rm -rf "$BACKUP"
-mv "$DEST" "$BACKUP" || fail "could not move the old app aside"
+rm -rf "$BACKUP" "$LEGACY_BACKUP"
+if [ -d "$DEST" ]; then
+  mv "$DEST" "$BACKUP" || fail "could not move the old app aside"
+fi
+if [ -d "$LEGACY" ]; then
+  mv "$LEGACY" "$LEGACY_BACKUP" || fail "could not move the old app aside"
+  echo "The previous install lived under the old name ($LEGACY); it was moved into the backup too, so only $DEST remains."
+fi
 ditto "$BUILT" "$DEST" || fail "install the new app"
 INSTALLED=1
-echo "=== Update to $VER installed (previous version kept at $BACKUP) ==="
+echo "=== Update to $VER installed (previous version kept in the backup folder) ==="
 [ -n "$WORK" ] && rm -rf "$WORK"
 open "$DEST" || fail "relaunch the app"
 "#;
@@ -1188,7 +1208,15 @@ mod tests {
     fn swap_script_only_swaps_and_restores_on_failure() {
         // The build happens in the app now; the script must not build anything.
         assert!(!SWAP_SCRIPT.contains("package.sh"), "swap script must not build");
-        for needle in ["pgrep -f", "/Applications/TsE.app", "mv \"$DEST\" \"$BACKUP\"", "ditto", "open \"$DEST\""] {
+        for needle in [
+            "pgrep -f",
+            "DEST=\"/Applications/TS Excel.app\"",
+            "LEGACY=\"/Applications/TsE.app\"",
+            "mv \"$DEST\" \"$BACKUP\"",
+            "mv \"$LEGACY\" \"$LEGACY_BACKUP\"",
+            "ditto",
+            "open \"$DEST\"",
+        ] {
             assert!(SWAP_SCRIPT.contains(needle), "swap script must contain: {needle}");
         }
     }
@@ -1216,7 +1244,7 @@ mod tests {
     #[test]
     fn build_output_lines_map_to_steps_and_counts() {
         assert_eq!(step_label("==> TS Excel 1.1.0 for macOS (aarch64), identity: -").as_deref(), Some("Preparing the build..."));
-        assert_eq!(step_label("==> assembling /long/path/TsE.app").as_deref(), Some("Assembling the app..."));
+        assert_eq!(step_label("==> assembling /long/path/TS Excel.app").as_deref(), Some("Assembling the app..."));
         assert_eq!(step_label("==> building /long/path/tse-by-tonynehihi-1.1.0-macos-aarch64.dmg").as_deref(), Some("Building the disk image..."));
         assert_eq!(step_label("==> building /long/path/gridcraft-cli-1.1.0-macos-aarch64.zip").as_deref(), Some("Packaging the command-line tool..."));
         assert_eq!(step_label("==> done (check the artifacts as shipped)").as_deref(), Some("Finishing up..."));

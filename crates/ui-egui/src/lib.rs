@@ -291,6 +291,12 @@ pub struct SheetApp {
     /// holding other text. Once the cut has been pasted, Paste leaves this text alone.
     cut_text: Option<String>,
     pub started: f64,
+    /// Quit handshake state (window close / Quit with unsaved workbooks): see
+    /// [`SheetApp::begin_quit`]. `quit_target` is the uid of the workbook the save
+    /// prompt is currently deciding about.
+    quit_requested: bool,
+    quit_confirmed: bool,
+    quit_target: Option<u64>,
 }
 
 impl SheetApp {
@@ -337,6 +343,9 @@ impl SheetApp {
             clipboard_text_at_copy: None,
             cut_text: None,
             started: now_ms(),
+            quit_requested: false,
+            quit_confirmed: false,
+            quit_target: None,
         }
     }
 
@@ -1034,6 +1043,74 @@ impl SheetApp {
         }
     }
 
+    /// The host asked to close the window (the close button, Quit, ⌘Q — every quit path
+    /// reaches the host's `close_requested`). Returns true when the window may close now.
+    /// With unsaved workbooks it returns false instead and asks about the first one with
+    /// the usual Save Changes prompt; the host vetoes this close, and once every workbook
+    /// has been answered for, [`SheetApp::quit_ready`] tells it to close for real. A
+    /// prompt answered with Cancel aborts the whole quit: the app stays open.
+    pub fn begin_quit(&mut self) -> bool {
+        if self.quit_confirmed {
+            return true;
+        }
+        if self.quit_requested {
+            return false;
+        }
+        // A cell still being edited is part of the workbook; commit it, as File › Close
+        // does. A draft that cannot be committed keeps the app open (the message
+        // `commit_edit` raised explains why), and the next close request retries.
+        if !self.commit_edit(0, 0, false, false) {
+            return false;
+        }
+        self.quit_requested = true;
+        self.prompt_next_dirty();
+        self.quit_confirmed
+    }
+
+    /// True once a quit begun by [`SheetApp::begin_quit`] has been fully answered and
+    /// the host should close the window for real.
+    pub fn quit_ready(&self) -> bool {
+        self.quit_requested && self.quit_confirmed
+    }
+
+    /// Asks about the first unsaved workbook with the Save Changes prompt (the engine
+    /// raises the `saveChanges` dialog itself when `file.close` finds changes), or
+    /// confirms the quit when no unsaved workbook is left.
+    fn prompt_next_dirty(&mut self) {
+        let Some(i) = self.session.documents().iter().position(|d| d.is_dirty()) else {
+            self.quit_confirmed = true;
+            return;
+        };
+        self.quit_target = self.session.documents().get(i).map(|d| d.uid);
+        if self.session.active_index() != i {
+            self.session.set_active(i);
+        }
+        self.run_or_alert("file.close", json!({}));
+    }
+
+    /// Advances the quit handshake once a save prompt has been answered: the prompted
+    /// workbook is gone (saved or discarded) or no longer dirty → ask about the next
+    /// one; it is still there unsaved → its prompt was dismissed (Cancel, or a Save As
+    /// that was cancelled), so the whole quit is off and the app stays as it was.
+    fn poll_quit(&mut self) {
+        if !self.quit_requested || self.quit_confirmed {
+            return;
+        }
+        // A prompt (or the message box reporting a failed save) is still deciding.
+        if self.dialog.is_some() || self.message.is_some() {
+            return;
+        }
+        let Some(uid) = self.quit_target.take() else {
+            self.prompt_next_dirty();
+            return;
+        };
+        if self.session.documents().iter().any(|d| d.uid == uid && d.is_dirty()) {
+            self.quit_requested = false;
+            return;
+        }
+        self.prompt_next_dirty();
+    }
+
     /// Per-frame logic (control channel, screenshots). Call before `ui`.
     pub fn logic(&mut self, ctx: &egui::Context) {
         // A keytip control request lives one frame: the ribbon consumes it during `ui`, and
@@ -1125,6 +1202,7 @@ impl SheetApp {
             }
             self.after_engine();
         }
+        self.poll_quit();
         if self.session.active().is_none() {
             self.session.new_workbook();
         }
