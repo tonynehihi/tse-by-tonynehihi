@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 — 2026-10-28
+
+- **SYNC WITH UPSTREAM GRIDCRAFT v0.12.1**: 777 upstream commits since 1.1.1, including 100% Stacked Bar and 100% Stacked Area charts, PivotTable Show Details from the cell menu, Fill Days / Weekdays / Months / Years for dates, Paste Name (F3) and an improved Go To, and circular-reference tracking in the status bar and Error Checking.
+- **ASK-TO-SAVE ON QUIT, KEPT AND STRENGTHENED**: the fork's close handshake survives the merge — closing the window or quitting (⌘Q / Quit) still asks about every unsaved workbook, one at a time, instead of discarding changes silently. It now also runs inside the app's own logic, so the prompt behaves the same on every close path.
+- **TS EXCEL BRANDING KEPT**: the macOS app menu, About, and File tab all still say TS Excel, with no upstream links anywhere in the UI.
+
+— tonynehihi
+
 ## 1.1.1 — 2026-10-23
 
 - **SAVE PROMPT ON QUIT**: closing the window or quitting (⌘Q / Quit) now asks what to do with every unsaved workbook — Save, Don't Save or Cancel, one workbook at a time — instead of discarding the changes silently. (Upstream GridCraft only ever asked when closing a document from the File menu; the window-close path never asked.)
